@@ -92,6 +92,7 @@ function onSearchInput() {
   }, 200)
 }
 
+
 function onPickClass(g: number) {
   topics.setClass(g)
 }

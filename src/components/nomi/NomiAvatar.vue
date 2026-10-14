@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAvatarStore } from '@/stores/avatar'
+import { useAvatarStore, type LookTab } from '@/stores/avatar'
 import { useShopStore } from '@/stores/shop'
 import {
   HORN_SHAPES, HORN_MIRROR, HORN_COLORS,
@@ -38,6 +38,9 @@ import {
 
 const props = withDefaults(defineProps<{
   size?: number
+  previewTab?: LookTab
+  previewId?: string
+  previewColor?: string
 }>(), { size: 52 })
 
 const avatar = useAvatarStore()
@@ -45,12 +48,28 @@ const shop = useShopStore()
 
 const gradId = `nomiGrad-${Math.random().toString(36).slice(2, 8)}`
 
+// Цвет тела: если preview — берём из пропса, иначе активный
 const bodyColors = computed(() => {
-  return NOMI_BODY_COLORS[shop.activeColor] || NOMI_BODY_COLORS.purple
+  const colorId = props.previewColor || shop.activeColor
+  return NOMI_BODY_COLORS[colorId] || NOMI_BODY_COLORS.purple
 })
 
+// Рожки: если previewTab === 'horns' и есть previewId — берём его, иначе активный
+const hornsId = computed(() =>
+  props.previewTab === 'horns' && props.previewId ? props.previewId : avatar.active.horns
+)
+const eyesId = computed(() =>
+  props.previewTab === 'eyes' && props.previewId ? props.previewId : avatar.active.eyes
+)
+const noseId = computed(() =>
+  props.previewTab === 'noses' && props.previewId ? props.previewId : avatar.active.noses
+)
+const mouthId = computed(() =>
+  props.previewTab === 'mouths' && props.previewId ? props.previewId : avatar.active.mouths
+)
+
 const hornsSvg = computed(() => {
-  const id = avatar.active.horns
+  const id = hornsId.value
   const shape = HORN_SHAPES[id] || HORN_SHAPES.classic
   const mirror = HORN_MIRROR[id] || HORN_MIRROR.classic
   const color = HORN_COLORS[id] || HORN_COLORS.classic
@@ -58,27 +77,22 @@ const hornsSvg = computed(() => {
 })
 
 const eyesSvg = computed(() => {
-  const id = avatar.active.eyes
+  const id = eyesId.value
   const shape = EYE_SHAPES[id] || EYE_SHAPES.round
   const color = EYE_COLORS[id] || EYE_COLORS.round
   return shape.replace(/currentColor/g, color)
 })
 
-const noseSvg = computed(() => NOSE_SHAPES[avatar.active.noses] || NOSE_SHAPES.small)
+const noseSvg = computed(() => NOSE_SHAPES[noseId.value] || NOSE_SHAPES.small)
 
 const mouthPath = computed(() => {
-  // При эмоциях подменяем рот
   const emotionToMouth: Record<string, string> = {
-    excited: 'wide',
-    love: 'love',
-    eating: 'lick',
-    angry: 'fang',
-    sleepy: 'purr'
+    excited: 'wide', love: 'love', eating: 'lick', angry: 'fang', sleepy: 'purr'
   }
-  const mouthId = avatar.emotion === 'happy'
-    ? avatar.active.mouths
-    : (emotionToMouth[avatar.emotion] || avatar.active.mouths)
-  return SMALL_MOUTHS[mouthId] || SMALL_MOUTHS.soft
+  const id = avatar.emotion === 'happy'
+    ? mouthId.value
+    : (emotionToMouth[avatar.emotion] || mouthId.value)
+  return SMALL_MOUTHS[id] || SMALL_MOUTHS.soft
 })
 
 const emotionClass = computed(() => `emoji-${avatar.emotion}`)

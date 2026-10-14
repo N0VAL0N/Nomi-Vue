@@ -1,50 +1,48 @@
 <!-- src/views/ToolsView.vue -->
 <template>
   <div class="tools-view">
-    <div class="title">🛠 Инструменты</div>
+    <div class="title">🛠 Мастерская</div>
+    <div class="subtitle">Инструменты для работы</div>
 
-    <div class="tool-list">
-      <RouterLink to="/timer" class="tool-card">
-        <div class="tool-icon">⏱️</div>
-        <div class="tool-info">
-          <div class="tool-name">Таймер</div>
-          <div class="tool-desc">Помодоро 25/5</div>
+    <div class="hub-grid">
+      <RouterLink to="/timer" class="hub-card" v-ripple>
+        <div class="hub-icon">
+          <AppIcon name="clock" :size="36" />
         </div>
-        <div class="tool-arrow">→</div>
+        <div class="hub-info">
+          <div class="hub-name">Таймер</div>
+          <div class="hub-desc">Помодоро 25/5</div>
+        </div>
       </RouterLink>
 
-      <RouterLink to="/checklist" class="tool-card">
-        <div class="tool-icon">✅</div>
-        <div class="tool-info">
-          <div class="tool-name">Чек-лист</div>
-          <div class="tool-desc">Задачи и повторы</div>
+      <!-- Заглушки для будущих инструментов -->
+      <div class="hub-card disabled">
+        <div class="hub-icon">
+          <AppIcon name="list" :size="36" />
         </div>
-        <div class="tool-arrow">→</div>
-      </RouterLink>
+        <div class="hub-info">
+          <div class="hub-name">Заметки</div>
+          <div class="hub-desc">Скоро</div>
+        </div>
+      </div>
 
-      <RouterLink to="/schedule" class="tool-card">
-        <div class="tool-icon">📅</div>
-        <div class="tool-info">
-          <div class="tool-name">Расписание</div>
-          <div class="tool-desc">Уроки на неделю</div>
+      <div class="hub-card disabled">
+        <div class="hub-icon">
+          <AppIcon name="brain" :size="36" />
         </div>
-        <div class="tool-arrow">→</div>
-      </RouterLink>
-
-      <RouterLink to="/stats" class="tool-card">
-        <div class="tool-icon">📊</div>
-        <div class="tool-info">
-          <div class="tool-name">Статистика</div>
-          <div class="tool-desc">Прогресс и активность</div>
+        <div class="hub-info">
+          <div class="hub-name">Фокус-режим</div>
+          <div class="hub-desc">Скоро</div>
         </div>
-        <div class="tool-arrow">→</div>
-      </RouterLink>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import { vRipple } from '@/directives/ripple'
 </script>
 
 <style scoped>
@@ -54,50 +52,71 @@ import { RouterLink } from 'vue-router'
   margin: 0 auto;
 }
 
-.title { font-size: 1.1rem; font-weight: 800; color: var(--text, #E6ECFF); margin-bottom: 14px; }
+.title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
 
-.tool-list {
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.hub-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-.tool-card {
+.hub-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--card-bg, #131A2A);
-  border: 1.5px solid var(--border-soft, #1A2236);
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--grad-card);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
   text-decoration: none;
-  color: var(--text, #E6ECFF);
-  transition: transform 0.15s;
+  transition: transform 0.2s, border-color 0.2s;
 }
 
-.tool-card:active { transform: scale(0.98); }
-
-.tool-icon {
-  font-size: 1.8rem;
-  width: 44px;
-  text-align: center;
+.hub-card:active {
+  transform: scale(0.98);
 }
 
-.tool-info { flex: 1; }
-
-.tool-name {
-  font-weight: 700;
-  font-size: 0.95rem;
+.hub-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.tool-desc {
+.hub-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(99, 102, 241, 0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #A78BFA;
+  flex-shrink: 0;
+}
+
+.hub-info { flex: 1; min-width: 0; }
+
+.hub-name {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.hub-desc {
   font-size: 0.78rem;
-  color: var(--text-secondary, #8B95B0);
-  margin-top: 3px;
-}
-
-.tool-arrow {
-  color: var(--text-dim, #5A6478);
-  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 600;
 }
 </style>

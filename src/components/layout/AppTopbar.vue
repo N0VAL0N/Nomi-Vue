@@ -1,37 +1,42 @@
 <!-- src/components/layout/AppTopbar.vue -->
 <template>
-  <header class="topbar">
-    <div class="topbar-left">
-      <RouterLink to="/" class="logo">НОМИ</RouterLink>
-    </div>
+  <header class="topbar glass">
+    <RouterLink to="/" class="logo">
+      <NomiAvatar :size="32" />
+      <span class="logo-text">НОМИ</span>
+    </RouterLink>
 
     <div class="topbar-right">
-      <div class="pill">🔥 {{ user.streak }}</div>
-      <div class="pill">⭐ {{ user.xp }} XP</div>
-      <div v-if="user.isPremium" class="pill premium" @click="openPremium">💎</div>
-      <button class="icon-btn" @click="goShop" aria-label="Магазин">🛒</button>
-      <button class="icon-btn" @click="goSettings" aria-label="Настройки">⚙️</button>
-      <button class="avatar" @click="goProfile">
-        {{ initial }}
+      <div class="pill">
+        <AppIcon name="flame" :size="14" />
+        <span>{{ user.streak }}</span>
+      </div>
+      <div class="pill">
+        <AppIcon name="star" :size="14" />
+        <span>{{ user.xp }}</span>
+      </div>
+      <button v-ripple class="icon-btn" @click="router.push('/shop')">
+        <AppIcon name="cart" :size="18" />
+      </button>
+      <button v-ripple class="icon-btn" @click="router.push('/settings')">
+        <AppIcon name="settings" :size="18" />
+      </button>
+      <button v-ripple class="avatar" @click="router.push('/profile')">
+        <AppIcon name="user" :size="16" />
       </button>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import NomiAvatar from '@/components/nomi/NomiAvatar.vue'
+import { vRipple } from '@/directives/ripple'
 
 const user = useUserStore()
 const router = useRouter()
-
-const initial = computed(() => (user.name || 'Я').charAt(0).toUpperCase())
-
-function goProfile() { router.push('/profile') }
-function goShop() { router.push('/shop') }
-function goSettings() { router.push('/settings') }
-function openPremium() { /* позже */ }
 </script>
 
 <style scoped>
@@ -42,27 +47,33 @@ function openPremium() { /* позже */ }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
-  background: var(--topbar-bg, #0D1220);
-  border-bottom: 1px solid var(--border-soft, #1A2236);
+  padding: 10px 14px;
+  margin: 8px 12px 0;
+  border-radius: var(--radius-full);
   padding-top: calc(10px + env(safe-area-inset-top));
 }
 
 .logo {
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.logo-text {
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  background: linear-gradient(135deg, #8B5CF6, #6366F1);
+  background: var(--grad-purple);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-decoration: none;
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pill {
@@ -70,44 +81,38 @@ function openPremium() { /* позже */ }
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
-  border-radius: 10px;
-  background: var(--card-bg, #131A2A);
-  border: 1px solid var(--border-soft, #1A2236);
+  border-radius: var(--radius-full);
+  background: var(--card-bg-2);
+  border: 1px solid var(--border-soft);
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-secondary, #8B95B0);
-}
-
-.pill.premium {
-  background: rgba(251, 191, 36, 0.1);
-  border-color: #FBBF24;
-  color: #FBBF24;
-  cursor: pointer;
+  color: var(--text);
 }
 
 .icon-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--card-bg, #131A2A);
-  border: 1px solid var(--border-soft, #1A2236);
-  color: var(--text, #E6ECFF);
-  font-size: 1rem;
-  cursor: pointer;
+  background: var(--card-bg-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.2s;
 }
+
+.icon-btn:active { background: var(--card-bg); }
 
 .avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  background: var(--grad-purple);
   color: #fff;
-  font-weight: 800;
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  cursor: pointer;
 }
 </style>

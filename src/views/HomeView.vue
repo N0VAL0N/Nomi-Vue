@@ -1,48 +1,58 @@
 <!-- src/views/HomeView.vue -->
 <template>
   <div class="home">
-    <!-- Приветствие + Номи -->
-    <div class="greeting card" @click="greetingClick">
-      <NomiAvatar :size="52" class="nomi-avatar" />
-      <div class="greeting-text">
-        <div class="greeting-main">{{ greeting }}, {{ userName }}!</div>
-        <div class="greeting-sub">{{ greetingSub }}</div>
+    <!-- Комната с кубом + HUD -->
+    <NomiRoom :compact="true" :show-hud="true" :show-tip="true" :avatar-size="100" />
+
+    <!-- Сундук -->
+    <div
+      v-if="user.isPremium"
+      class="chest glass"
+      :class="{ opened: chest.isOpenToday }"
+      @click="openChest"
+    >
+      <AppIcon :name="chest.isOpenToday ? 'check' : 'gift'" :size="28" />
+      <div class="chest-info">
+        <div class="chest-title">{{ chest.isOpenToday ? 'Сундук открыт' : 'Ежедневный сундук' }}</div>
+        <div class="chest-sub">{{ chest.isOpenToday ? 'Заходи завтра!' : 'Открой!' }}</div>
       </div>
-      <div class="clock">
-        <div class="clock-time">{{ clock }}</div>
-        <div class="clock-date">{{ clockDate }}</div>
+      <AppIcon v-if="!chest.isOpenToday" name="sparkles" :size="20" />
+    </div>
+
+    <!-- Прогресс -->
+    <div class="progress-card" @click="goSettings">
+      <div class="progress-head">
+        <span>📚 УЧЁБА</span>
+        <span class="progress-pct">{{ progress.studyPercent }}%</span>
       </div>
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: progress.studyPercent + '%' }" />
+      </div>
+    </div>
+
+    <div class="progress-card" @click="goSettings">
+      <div class="progress-head">
+        <span>🏖️ КАНИКУЛЫ</span>
+        <span class="progress-pct">{{ progress.daysToVacation >= 0 ? progress.daysToVacation + 'д' : '—' }}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill gold" :style="{ width: vacationPercent + '%' }" />
+      </div>
+      <div class="progress-label">{{ progress.vacationLabel }}</div>
     </div>
 
     <!-- Быстрые действия -->
     <div class="section-title">⚡ Быстрые действия</div>
-    <div class="quick-actions">
-      <button
-        v-for="a in quickActions"
-        :key="a.to"
-        class="qa-card"
-        @click="go(a.to)"
-      >
-        <div class="qa-icon">{{ a.icon }}</div>
-        <div class="qa-label">{{ a.label }}</div>
-        <div class="qa-sub">{{ a.sub }}</div>
+    <div class="quick-grid">
+      <button v-for="a in quickActions" :key="a.to" v-ripple class="quick-card" @click="router.push(a.to)">
+        <AppIcon :name="a.icon" :size="22" />
+        <div class="quick-label">{{ a.label }}</div>
+        <div class="quick-sub">{{ a.sub }}</div>
       </button>
     </div>
 
-    <!-- Прогресс уровня -->
-    <div class="card level-card">
-      <div class="level-header">
-        <span>{{ level.icon }} {{ level.name }}</span>
-        <span class="level-pct">{{ levelPercent }}%</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: levelPercent + '%' }" />
-      </div>
-      <div class="level-label">{{ levelCur }} / {{ levelNeed }} XP</div>
-    </div>
-
-    <!-- Мотивация -->
-    <div class="card quote-card" @click="refreshQuote">
+    <!-- Цитата -->
+    <div class="quote-card" @click="refreshQuote">
       <div class="quote-label">💭 Цитата дня</div>
       <div class="quote-text">«{{ quote.text }}»</div>
       <div class="quote-author">— {{ quote.author }}</div>
@@ -51,99 +61,66 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useHomeworkStore } from '@/stores/homework'
 import { useChecklistStore } from '@/stores/checklist'
-import { getLevel, getLevelIndex } from '@/utils/levels'
-import { randomQuote, type Quote } from '@/data/quotes'
+import { useProgressStore } from '@/stores/progress'
+import { useChestStore } from '@/stores/chest'
+import { useEconomy } from '@/composables/useEconomy'
 import { useToast } from '@/composables/useToast'
-import NomiAvatar from '@/components/nomi/NomiAvatar.vue'
-import { useAvatarStore } from '@/stores/avatar'
+import { useSound } from '@/composables/useSound'
+import { useConfetti } from '@/composables/useConfetti'
+import { randomQuote, type Quote } from '@/data/quotes'
+import { vRipple } from '@/directives/ripple'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import NomiRoom from '@/components/nomi/NomiRoom.vue'
 
-const user = useUserStore()
-const homework = useHomeworkStore()
-const checklist = useChecklistStore()
-const toast = useToast()
 const router = useRouter()
-const avatarStore = useAvatarStore()
+const user = useUserStore()
+const hw = useHomeworkStore()
+const cl = useChecklistStore()
+const progress = useProgressStore()
+const chest = useChestStore()
+const economy = useEconomy()
+const toast = useToast()
+const sound = useSound()
+const { confetti } = useConfetti()
 
 const quote = ref<Quote>(randomQuote())
-const clock = ref('--:--')
-const clockDate = ref('—')
 
-const userName = computed(() => user.name || 'друг')
-const level = computed(() => getLevel(user.xp))
-const levelPercent = computed(() => {
-  const l = level.value
-  if (l.max === Infinity) return 100
-  return Math.min(100, Math.round(((user.xp - l.min) / (l.max - l.min)) * 100))
-})
-const levelCur = computed(() => user.xp - level.value.min)
-const levelNeed = computed(() =>
-  level.value.max === Infinity ? 0 : level.value.max - level.value.min
-)
-
-const greeting = computed(() => {
-  const h = new Date().getHours()
-  if (h < 5) return 'Доброй ночи'
-  if (h < 12) return 'Доброе утро'
-  if (h < 17) return 'Добрый день'
-  if (h < 23) return 'Добрый вечер'
-  return 'Доброй ночи'
-})
-
-const greetingSub = computed(() => {
-  const h = new Date().getHours()
-  if (h < 12) return 'Начни день с одного шага'
-  if (h < 18) return 'Отличное время для учёбы'
-  if (h < 23) return 'Подведём итоги?'
-  return 'Пора отдохнуть 😴'
+const vacationPercent = computed(() => {
+  if (progress.onVacation) return 100
+  if (progress.daysToVacation < 0) return 0
+  return Math.max(0, Math.min(100, Math.round((1 - progress.daysToVacation / 90) * 100)))
 })
 
 const quickActions = computed(() => [
-  { icon: '📚', label: 'Темы',       to: '/topics',   sub: 'Изучать' },
-  { icon: '📝', label: 'ДЗ',         to: '/hw',       sub: `${homework.pending.length}` },
-  { icon: '📅', label: 'Расписание', to: '/schedule', sub: 'На день' },
-  { icon: '⏱️', label: 'Таймер',     to: '/timer',    sub: '25/5' },
-  { icon: '✅', label: 'Задачи',     to: '/checklist', sub: `${checklist.pending.length}` },
-  { icon: '📊', label: 'Статистика', to: '/stats',    sub: 'Прогресс' }
+  { icon: 'book',     label: 'Темы',       sub: 'Изучать',   to: '/topics' },
+  { icon: 'list',     label: 'ДЗ',          sub: `${hw.pending.length}`,  to: '/hw' },
+  { icon: 'calendar', label: 'Расписание', sub: 'На день',   to: '/schedule' },
+  { icon: 'clock',    label: 'Таймер',      sub: '25/5',      to: '/timer' },
+  { icon: 'check',    label: 'Задачи',      sub: `${cl.pending.length}`,  to: '/checklist' },
+  { icon: 'chart',    label: 'Статистика', sub: 'Прогресс',  to: '/stats' }
 ])
-
-function updateClock() {
-  const d = new Date()
-  clock.value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
-  const days = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
-  const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
-  clockDate.value = `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`
-}
 
 function refreshQuote() {
   quote.value = randomQuote()
 }
 
-function go(to: string) {
-  router.push(to)
+function openChest() {
+  const reward = chest.open()
+  if (reward === 0) { toast.info('📭 Уже открыт'); return }
+  economy.addXP(reward)
+  confetti(50, true, true)
+  sound.fanfare()
+  toast.gold(`🎁 +${reward} XP!`)
 }
 
-function greetingClick() {
-  avatarStore.setEmotion('excited', 800)
-  const h = new Date().getHours()
-  const msg = h < 5 ? 'Доброй ночи! 😴' : h < 12 ? 'Доброе утро! ☀️' : h < 17 ? 'Добрый день! 💪' : 'Добрый вечер! 🌙'
-  toast.info(msg)
+function goSettings() {
+  router.push('/settings')
 }
-
-let clockTimer: ReturnType<typeof setInterval> | null = null
-
-onMounted(() => {
-  updateClock()
-  clockTimer = setInterval(updateClock, 30000)
-})
-
-onUnmounted(() => {
-  if (clockTimer) clearInterval(clockTimer)
-})
 </script>
 
 <style scoped>
@@ -153,173 +130,136 @@ onUnmounted(() => {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-.card {
-  background: var(--card-bg, #131A2A);
-  border: 1px solid var(--border-soft, #1A2236);
-  border-radius: 18px;
-  padding: 16px;
-}
-
-/* Greeting */
-.greeting {
+/* ---------- Chest ---------- */
+.chest {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius);
   cursor: pointer;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(249, 115, 22, 0.1)) !important;
+  border: 2px solid var(--premium-gold) !important;
 }
-
-.nomi-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  flex-shrink: 0;
-  transition: transform 0.3s;
-}
-
-.nomi-avatar.jumping {
-  animation: jump 0.7s ease;
-}
-
-@keyframes jump {
-  0%   { transform: translateY(0) scale(1); }
-  30%  { transform: translateY(-14px) scale(1.1); }
-  60%  { transform: translateY(0) scale(1); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-.greeting-text { flex: 1; min-width: 0; }
-
-.greeting-main {
+.chest.opened { opacity: 0.6; }
+.chest :deep(svg) { color: var(--premium-gold); }
+.chest-info { flex: 1; }
+.chest-title {
   font-weight: 800;
-  font-size: 1rem;
-  color: var(--text, #E6ECFF);
+  font-size: 0.92rem;
+  color: var(--premium-gold);
 }
-
-.greeting-sub {
-  font-size: 0.78rem;
-  color: var(--text-secondary, #8B95B0);
+.chest-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
-.clock { text-align: right; }
-
-.clock-time {
-  font-size: 1.4rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--text, #E6ECFF);
-  line-height: 1;
+/* ---------- Progress ---------- */
+.progress-card {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--grad-card);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
 }
-
-.clock-date {
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text);
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+.progress-pct { color: var(--purple); font-weight: 800; }
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--grad-purple);
+  border-radius: var(--radius-full);
+  transition: width 0.8s ease;
+}
+.progress-fill.gold { background: var(--grad-gold); }
+.progress-label {
+  text-align: right;
   font-size: 0.7rem;
-  color: var(--text-dim, #5A6478);
-  margin-top: 4px;
+  color: var(--text-secondary);
+  margin-top: 6px;
   font-weight: 600;
 }
 
-/* Section title */
+/* ---------- Quick actions ---------- */
 .section-title {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 800;
-  color: var(--text, #E6ECFF);
-  margin-top: 4px;
+  color: var(--text);
+  margin-top: 6px;
 }
-
-/* Quick actions */
-.quick-actions {
+.quick-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
-
-.qa-card {
-  padding: 12px 8px;
-  border-radius: 14px;
-  background: var(--card-bg, #131A2A);
-  border: 1px solid var(--border-soft, #1A2236);
-  text-align: left;
-  cursor: pointer;
-  color: var(--text, #E6ECFF);
-}
-
-.qa-card:active { transform: scale(0.97); }
-
-.qa-icon { font-size: 1.5rem; margin-bottom: 4px; }
-.qa-label { font-weight: 700; font-size: 0.82rem; }
-.qa-sub {
-  font-size: 0.68rem;
-  color: var(--text-secondary, #8B95B0);
-  margin-top: 2px;
-}
-
-/* Level */
-.level-card { display: flex; flex-direction: column; gap: 8px; }
-
-.level-header {
+.quick-card {
   display: flex;
-  justify-content: space-between;
-  font-weight: 700;
-  font-size: 0.88rem;
-}
-
-.level-pct { color: #A78BFA; font-weight: 800; }
-
-.progress-bar {
-  width: 100%;
-  height: 10px;
-  background: var(--border, #1E2740);
-  border-radius: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--grad-card);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  text-align: left;
   overflow: hidden;
 }
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(135deg, #FBBF24, #F59E0B);
-  border-radius: 6px;
-  transition: width 0.6s;
-}
-
-.level-label {
-  text-align: right;
-  font-size: 0.72rem;
-  color: var(--text-secondary, #8B95B0);
+.quick-card :deep(svg) { color: #A78BFA; }
+.quick-label {
   font-weight: 700;
+  font-size: 0.82rem;
+}
+.quick-sub {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
-/* Quote */
+/* ---------- Quote ---------- */
 .quote-card {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(124, 58, 237, 0.3);
   cursor: pointer;
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(99, 102, 241, 0.1));
-  border-color: rgba(124, 58, 237, 0.4);
 }
-
 .quote-label {
   font-size: 0.72rem;
   font-weight: 800;
   color: #A78BFA;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-bottom: 8px;
 }
-
 .quote-text {
   font-size: 0.92rem;
   font-style: italic;
-  line-height: 1.55;
-  color: var(--text, #E6ECFF);
+  line-height: 1.5;
+  color: var(--text);
 }
-
 .quote-author {
-  font-size: 0.75rem;
-  color: var(--text-secondary, #8B95B0);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
   margin-top: 8px;
   font-weight: 600;
 }

@@ -17,6 +17,9 @@ export const useUserStore = defineStore('user', {
     role: 'student',
     xp: 0,
     streak: 0,
+    usedVoiceInput: false,
+    statsViewsToday: 0,
+    shamanSung: 0,
     lastCompletedDate: null as string | null,
     activeTitle: null as string | null,
     premium: {

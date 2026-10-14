@@ -5,6 +5,8 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', name: 'home', component: HomeView },
+    { path: '/study', name: 'study', component: () => import('@/views/StudyView.vue') },
+    { path: '/nomi', name: 'nomi', component: () => import('@/views/NomiView.vue') },
     { path: '/topics', name: 'topics', component: () => import('@/views/TopicsView.vue') },
     { path: '/topics/:id', name: 'topic', component: () => import('@/views/TopicDetailView.vue') },
     { path: '/hw', name: 'hw', component: () => import('@/views/HwView.vue') },
@@ -16,7 +18,10 @@ const router = createRouter({
     { path: '/stats', name: 'stats', component: () => import('@/views/StatsView.vue') },
     { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
     { path: '/pet', name: 'pet', component: () => import('@/views/PetView.vue') },
-    { path: '/tools', name: 'tools', component: () => import('@/views/ToolsView.vue') }
+    { path: '/tools', name: 'tools', component: () => import('@/views/ToolsView.vue') },
+    { path: '/quests', name: 'quests', component: () => import('@/views/QuestsView.vue') },
+    { path: '/flash', name: 'flash', component: () => import('@/views/FlashView.vue') },
+    { path: '/fridge', name: 'fridge', component: () => import('@/views/FridgeView.vue') }
   ]
 })
 

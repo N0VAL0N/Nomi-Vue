@@ -3,8 +3,8 @@
   <div class="shop-view">
     <div class="title">🛒 Магазин</div>
 
-    <div class="balance">
-      <span class="balance-icon">💰</span>
+    <div class="balance glass">
+      <AppIcon name="star" :size="18" />
       <span class="balance-value">{{ user.xp }}</span>
       <span class="balance-label">XP</span>
     </div>
@@ -22,19 +22,24 @@
       </button>
     </div>
 
-    <!-- Цвета аватара -->
+    <!-- Цвета -->
     <div v-if="activeTab === 'colors'" class="grid">
       <div
-        v-for="c in colors"
+        v-for="c in AVATAR_COLORS"
         :key="c.id"
         class="item"
-        :class="{ owned: shop.ownedColors.includes(c.id), active: shop.activeColor === c.id }"
+        :class="{
+          owned: shop.ownedColors.includes(c.id),
+          active: shop.activeColor === c.id
+        }"
         @click="pickColor(c)"
       >
-        <div class="color-preview" :style="{ background: c.gradient }" />
+        <div class="preview-avatar">
+          <NomiAvatar :size="72" :preview-color="c.id" />
+        </div>
         <div class="item-name">{{ c.name }}</div>
         <div class="item-price" :class="{ owned: shop.ownedColors.includes(c.id) }">
-          {{ shop.ownedColors.includes(c.id) ? 'Есть' : (c.price === 0 ? 'Бесплатно' : c.price + ' XP') }}
+          {{ priceLabel(c, shop.ownedColors) }}
         </div>
       </div>
     </div>
@@ -42,16 +47,19 @@
     <!-- Шляпы -->
     <div v-if="activeTab === 'hats'" class="grid">
       <div
-        v-for="h in hats"
+        v-for="h in HATS"
         :key="h.id"
         class="item"
-        :class="{ owned: shop.ownedHats.includes(h.id), active: shop.activeHat === h.id }"
+        :class="{
+          owned: shop.ownedHats.includes(h.id),
+          active: shop.activeHat === h.id
+        }"
         @click="pickHat(h)"
       >
         <div class="hat-preview">{{ h.icon }}</div>
         <div class="item-name">{{ h.name }}</div>
         <div class="item-price" :class="{ owned: shop.ownedHats.includes(h.id) }">
-          {{ shop.ownedHats.includes(h.id) ? 'Есть' : (h.price === 0 ? 'Бесплатно' : h.price + ' XP') }}
+          {{ priceLabel(h, shop.ownedHats) }}
         </div>
       </div>
     </div>
@@ -81,37 +89,84 @@
           }"
           @click="pickLook(item.id)"
         >
-          <div class="look-preview">
-            <NomiAvatar :size="80" />
+          <div class="preview-avatar">
+            <NomiAvatar
+              :size="72"
+              :preview-tab="lookTab"
+              :preview-id="item.id"
+            />
           </div>
           <div class="item-name">{{ item.name }}</div>
           <div class="item-price" :class="{ owned: avatar.isOwned(lookTab, item.id) }">
-            {{ avatar.isOwned(lookTab, item.id) ? 'Есть' : (item.price === 0 ? 'Бесплатно' : item.price + ' XP') }}
+            {{ priceLabel(item, avatar.owned[lookTab]) }}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Заглушки -->
-    <div v-if="activeTab === 'themes'" class="soon">🎨 Темы — скоро</div>
-    <div v-if="activeTab === 'backgrounds'" class="soon">🖼 Фоны — скоро</div>
+    <!-- Темы -->
+    <div v-if="activeTab === 'themes'" class="grid">
+      <div
+        v-for="t in [...THEMES_BASE, ...THEMES_EXTRA]"
+        :key="t.id"
+        class="item"
+        :class="{
+          owned: shop.ownedThemes.includes(t.id),
+          active: shop.activeTheme === t.id
+        }"
+        @click="pickTheme(t)"
+      >
+        <div
+          class="theme-preview"
+          :style="{ background: t.gradient || (t.id === 'light' ? '#FFFFFF' : '#0A0E1A') }"
+        />
+        <div class="item-name">{{ t.name }}</div>
+        <div class="item-price" :class="{ owned: shop.ownedThemes.includes(t.id) }">
+          {{ priceLabel(t, shop.ownedThemes) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Фоны -->
+    <div v-if="activeTab === 'backgrounds'" class="grid">
+      <div
+        v-for="b in BACKGROUNDS"
+        :key="b.id"
+        class="item"
+        :class="{
+          owned: shop.ownedBackgrounds.includes(b.id),
+          active: shop.activeBackground === b.id
+        }"
+        @click="pickBackground(b)"
+      >
+        <div class="bg-preview" :style="{ background: b.css || 'var(--card-bg-2)' }" />
+        <div class="item-name">{{ b.name }}</div>
+        <div class="item-price" :class="{ owned: shop.ownedBackgrounds.includes(b.id) }">
+          {{ priceLabel(b, shop.ownedBackgrounds as string[]) }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { useShopStore, SHOP_AVATAR_COLORS, SHOP_HATS, type ShopItem } from '@/stores/shop'
+import { useShopStore, AVATAR_COLORS, HATS, THEMES_BASE, THEMES_EXTRA, BACKGROUNDS, type ShopItem, type BackgroundItem } from '@/stores/shop'
 import { useAvatarStore, type LookTab } from '@/stores/avatar'
+import { useBackgroundStore } from '@/stores/background'
 import { NOMI_LOOK_DATA, type AvatarItem } from '@/data/avatar'
 import { useEconomy } from '@/composables/useEconomy'
 import { useToast } from '@/composables/useToast'
 import { useSound } from '@/composables/useSound'
+import { vRipple } from '@/directives/ripple'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import NomiAvatar from '@/components/nomi/NomiAvatar.vue'
 
 const user = useUserStore()
 const shop = useShopStore()
 const avatar = useAvatarStore()
+const bg = useBackgroundStore()
 const economy = useEconomy()
 const toast = useToast()
 const sound = useSound()
@@ -134,28 +189,32 @@ const lookTabs = [
   { value: 'mouths' as LookTab, label: '😊 Улыбки' }
 ]
 
-const colors = SHOP_AVATAR_COLORS
-const hats = SHOP_HATS
-
 const currentLookItems = computed<AvatarItem[]>(() => NOMI_LOOK_DATA[lookTab.value] || [])
 
-function tryBuy(item: ShopItem | AvatarItem, ownedList: string[]): boolean {
-  if (ownedList.includes(item.id)) return true
+function priceLabel(item: ShopItem | AvatarItem | BackgroundItem, owned: string[]): string {
+  if (owned.includes(item.id)) return 'Есть'
+  if (item.price === 0) return 'Бесплатно'
+  const realPrice = user.isPremium ? Math.round(item.price * 0.7) : item.price
+  return realPrice + ' XP'
+}
+
+function tryBuy(item: ShopItem | AvatarItem | BackgroundItem, owned: string[]): boolean {
+  if (owned.includes(item.id)) return true
   if (user.isPremium) {
     toast.gold('💎 Бесплатно!')
     return true
   }
-  const finalPrice = user.price(item.price)
-  if (finalPrice === 0) return true
-  if (!confirm(`Купить «${item.name}» за ${finalPrice} XP?`)) return false
-  if (!economy.spendXP(finalPrice)) return false
+  const realPrice = Math.round(item.price * 0.7)
+  if (realPrice === 0) return true
+  if (!confirm(`Купить «${item.name}» за ${realPrice} XP?`)) return false
+  if (!economy.spendXP(realPrice)) return false
   sound.success()
   return true
 }
 
 function pickColor(c: ShopItem) {
   if (!tryBuy(c, shop.ownedColors)) return
-  shop.buyColor(c)
+  shop.ownColor(c.id)
   toast.success(`🎭 ${c.name}`)
 }
 
@@ -165,7 +224,7 @@ function pickHat(h: ShopItem) {
     return
   }
   if (!tryBuy(h, shop.ownedHats)) return
-  shop.buyHat(h)
+  shop.ownHat(h.id)
   toast.success(`🎩 ${h.name}`)
 }
 
@@ -180,6 +239,29 @@ function pickLook(id: string) {
   avatar.setActive(lookTab.value, id)
   toast.success(`🎉 ${item.name}`)
 }
+
+function pickTheme(t: ShopItem) {
+  if (!tryBuy(t, shop.ownedThemes)) return
+  shop.ownTheme(t.id)
+  applyThemeClass(t.id)
+  toast.success(`🎨 ${t.name}`)
+}
+
+function pickBackground(b: BackgroundItem) {
+  if (!tryBuy(b, shop.ownedBackgrounds as string[])) return
+  shop.ownBackground(b.id)
+  bg.setTheme(b.id)
+  toast.success(`🖼 ${b.name}`)
+}
+
+function applyThemeClass(id: string) {
+  document.body.classList.remove('theme-fire', 'theme-forest', 'theme-gold', 'theme-cosmic', 'light-theme')
+  if (id === 'light') document.body.classList.add('light-theme')
+  else if (id !== 'dark') document.body.classList.add('theme-' + id)
+}
+
+// Применяем сохранённую тему при загрузке
+watch(() => shop.activeTheme, applyThemeClass, { immediate: true })
 </script>
 
 <style scoped>
@@ -189,20 +271,27 @@ function pickLook(id: string) {
   margin: 0 auto;
 }
 
-.title { font-size: 1.1rem; font-weight: 800; color: var(--text, #E6ECFF); margin-bottom: 14px; }
+.title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 14px;
+}
 
 .balance {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  border-radius: var(--radius-full);
+  background: var(--grad-gold) !important;
   color: #0A1930;
   font-weight: 800;
   font-size: 0.95rem;
   margin-bottom: 14px;
 }
+
+.balance :deep(svg) { color: #0A1930; }
 
 .balance-value { font-size: 1.2rem; }
 .balance-label { margin-left: auto; opacity: 0.7; font-size: 0.75rem; }
@@ -221,19 +310,23 @@ function pickLook(id: string) {
 .tab {
   flex-shrink: 0;
   padding: 8px 16px;
-  border-radius: 12px;
-  background: var(--card-bg-2, #161E30);
-  border: 1.5px solid var(--border, #1E2740);
-  color: var(--text-secondary, #8B95B0);
+  border-radius: var(--radius-full);
+  background: var(--card-bg-2);
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
 }
 
 .tab.active {
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  background: var(--grad-purple);
   color: #fff;
   border-color: transparent;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.5);
+  transform: scale(1.05);
 }
 
 .grid {
@@ -248,49 +341,70 @@ function pickLook(id: string) {
 
 .item {
   padding: 14px;
-  border-radius: 16px;
-  background: var(--card-bg, #131A2A);
-  border: 1.5px solid var(--border-soft, #1A2236);
+  border-radius: var(--radius);
+  background: var(--grad-card);
+  border: 1.5px solid var(--border-soft);
   text-align: center;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.item.owned { border-color: #22C55E; }
-.item.active { box-shadow: 0 0 0 2px #22C55E; }
+.item:active { transform: scale(0.97); }
+.item.owned { border-color: var(--success); }
+.item.active { box-shadow: 0 0 0 2px var(--success); }
 
-.color-preview {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  margin: 0 auto 8px;
+.preview-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  height: 72px;
 }
 
 .hat-preview {
   font-size: 2.5rem;
   margin-bottom: 8px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-preview {
+  height: 72px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+
+.bg-preview {
+  height: 72px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
 }
 
 .item-name {
   font-weight: 700;
   font-size: 0.85rem;
-  color: var(--text, #E6ECFF);
+  color: var(--text);
   margin-bottom: 6px;
 }
 
 .item-price {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 10px;
-  background: var(--card-bg-2, #161E30);
-  border: 1px solid var(--border, #1E2740);
-  font-size: 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--card-bg-2);
+  border: 1px solid var(--border);
+  font-size: 0.72rem;
   font-weight: 800;
   color: #A78BFA;
 }
 
 .item-price.owned {
   background: rgba(34, 197, 94, 0.15);
-  color: #22C55E;
+  color: var(--success);
   border: none;
 }
 
@@ -310,33 +424,19 @@ function pickLook(id: string) {
 .look-tab {
   flex-shrink: 0;
   padding: 9px 16px;
-  border-radius: 12px;
-  background: var(--card-bg-2, #161E30);
-  color: var(--text-secondary, #8B95B0);
-  border: 1.5px solid var(--border, #1E2740);
+  border-radius: var(--radius-full);
+  background: var(--card-bg-2);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.25s ease;
 }
 
 .look-tab.active {
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  background: var(--grad-purple);
   color: #fff;
   border-color: transparent;
-}
-
-.look-preview {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-  height: 80px;
-  align-items: center;
-}
-
-.soon {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-dim, #5A6478);
-  font-size: 0.9rem;
 }
 </style>

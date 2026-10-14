@@ -29,6 +29,13 @@ export function useEconomy() {
         toast.success(`🎉 Уровень: ${getLevel(user.xp).name}!`)
       }, 300)
     }
+
+    // Мгновенная проверка достижений (асинхронно, чтобы не блокировать UI)
+    setTimeout(() => {
+      import('@/stores/achievements').then(({ useAchievementsStore }) => {
+        useAchievementsStore().check()
+      })
+    }, 100)
   }
 
   function spendXP(amount: number): boolean {
