@@ -12,7 +12,7 @@
         maxlength="100"
         @keydown.enter="add"
       />
-      <button @click="add">+</button>
+      <button v-ripple @click="add">+</button>
     </div>
 
     <!-- Дата / время / повтор -->
@@ -25,6 +25,12 @@
         <option value="week">Каждую неделю</option>
       </select>
     </div>
+
+    <!-- Моё задание -->
+    <label class="custom-check">
+      <input type="checkbox" v-model="newCustom" />
+      <span>📌 Моё задание (пойдёт в загруженность дня)</span>
+    </label>
 
     <!-- Фильтры -->
     <div class="chips-row">
@@ -63,6 +69,7 @@
             <span v-if="t.repeat !== 'none'" class="badge-repeat">
               🔁 {{ repeatLabel(t.repeat) }}
             </span>
+            <span v-if="t.custom" class="badge-custom">📌 моё</span>
           </div>
         </div>
         <button class="task-del" @click="onDelete(t.id)">🗑</button>
@@ -79,6 +86,7 @@ import { useToast } from '@/composables/useToast'
 import { useSound } from '@/composables/useSound'
 import { todayISO, addDays, formatDate } from '@/utils/date'
 import { shortId } from '@/utils/id'
+import { vRipple } from '@/directives/ripple'
 
 const cl = useChecklistStore()
 const economy = useEconomy()
@@ -89,6 +97,7 @@ const newText = ref('')
 const newDate = ref(todayISO())
 const newTime = ref('')
 const newRepeat = ref<RepeatType>('none')
+const newCustom = ref(false)
 
 const filters = [
   { value: 'active', label: 'Активные' },
@@ -141,11 +150,13 @@ function add() {
     time: newTime.value,
     repeat: newRepeat.value,
     done: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    custom: newCustom.value
   })
   newText.value = ''
   newTime.value = ''
   newRepeat.value = 'none'
+  newCustom.value = false
   sound.success()
   toast.success('✅ Добавлено')
 }
@@ -177,7 +188,7 @@ function onDelete(id: string) {
 .title {
   font-size: 1.1rem;
   font-weight: 800;
-  color: var(--text, #E6ECFF);
+  color: var(--text);
   margin-bottom: 14px;
 }
 
@@ -190,18 +201,18 @@ function onDelete(id: string) {
 .input-row input {
   flex: 1;
   padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--card-bg-2, #161E30);
-  color: var(--text, #E6ECFF);
-  border: 1.5px solid var(--border, #1E2740);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg-2);
+  color: var(--text);
+  border: 1.5px solid var(--border);
   font-size: 0.95rem;
   outline: none;
 }
 
 .input-row button {
   padding: 12px 18px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  border-radius: var(--radius-sm);
+  background: var(--grad-purple);
   color: #fff;
   font-weight: 800;
   font-size: 1.2rem;
@@ -218,12 +229,28 @@ function onDelete(id: string) {
 .form-row-3 > * {
   flex: 1;
   padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--card-bg-2, #161E30);
-  color: var(--text, #E6ECFF);
-  border: 1.5px solid var(--border, #1E2740);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg-2);
+  color: var(--text);
+  border: 1.5px solid var(--border);
   font-size: 0.82rem;
   outline: none;
+}
+
+.custom-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.custom-check input {
+  width: auto;
+  accent-color: #7C3AED;
 }
 
 .chips-row {
@@ -234,31 +261,32 @@ function onDelete(id: string) {
   margin-bottom: 12px;
   scrollbar-width: none;
 }
-
 .chips-row::-webkit-scrollbar { display: none; }
 
 .chip {
   flex-shrink: 0;
   padding: 6px 14px;
-  border-radius: 20px;
-  background: var(--card-bg-2, #161E30);
-  border: 1.5px solid var(--border, #1E2740);
-  color: var(--text-secondary, #8B95B0);
+  border-radius: var(--radius-full);
+  background: var(--card-bg-2);
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .chip.active {
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  background: var(--grad-purple);
   color: #fff;
   border-color: transparent;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
 }
 
 .empty {
   text-align: center;
   padding: 40px 20px;
-  color: var(--text-dim, #5A6478);
+  color: var(--text-dim);
 }
 
 .task-list { display: flex; flex-direction: column; gap: 8px; }
@@ -268,20 +296,20 @@ function onDelete(id: string) {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--card-bg, #131A2A);
-  border: 1.5px solid var(--border-soft, #1A2236);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-soft);
 }
 
 .task-card.done { opacity: 0.55; }
-.task-card.done .task-text { text-decoration: line-through; color: #22C55E; }
+.task-card.done .task-text { text-decoration: line-through; color: var(--success); }
 
 .task-checkbox {
   width: 30px;
   height: 30px;
   min-width: 30px;
   border-radius: 50%;
-  border: 2px solid var(--border, #1E2740);
+  border: 2px solid var(--border);
   background: transparent;
   color: transparent;
   cursor: pointer;
@@ -293,7 +321,7 @@ function onDelete(id: string) {
 }
 
 .task-checkbox.checked {
-  background: linear-gradient(135deg, #22C55E, #4ADE80);
+  background: var(--grad-green);
   border-color: transparent;
   color: #fff;
 }
@@ -303,7 +331,7 @@ function onDelete(id: string) {
 .task-text {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--text, #E6ECFF);
+  color: var(--text);
   word-break: break-word;
 }
 
@@ -312,24 +340,25 @@ function onDelete(id: string) {
   gap: 8px;
   flex-wrap: wrap;
   font-size: 0.7rem;
-  color: var(--text-dim, #5A6478);
+  color: var(--text-dim);
   margin-top: 4px;
 }
 
-.badge-time, .badge-repeat {
+.badge-time, .badge-repeat, .badge-custom {
   padding: 1px 8px;
   border-radius: 10px;
   font-size: 0.65rem;
   font-weight: 700;
 }
 
-.badge-time { background: rgba(34, 197, 94, 0.15); color: #22C55E; }
+.badge-time   { background: rgba(34, 197, 94, 0.15); color: var(--success); }
 .badge-repeat { background: rgba(76, 111, 255, 0.15); color: #64B5F6; }
+.badge-custom { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
 
 .task-del {
   background: transparent;
   border: none;
-  color: var(--text-dim, #5A6478);
+  color: var(--text-dim);
   font-size: 1rem;
   cursor: pointer;
   padding: 4px;

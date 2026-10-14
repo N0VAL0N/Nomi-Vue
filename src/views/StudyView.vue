@@ -39,6 +39,12 @@
         <div class="hub-name">Холодильник</div>
         <div class="hub-desc">SRS</div>
       </RouterLink>
+
+      <RouterLink to="/errors" class="hub-card">
+        <AppIcon name="target" :size="28" />
+        <div class="hub-name">Дневник ошибок</div>
+        <div class="hub-desc">{{ errorCount }} проблем</div>
+      </RouterLink>
     </div>
   </div>
 </template>
@@ -51,10 +57,13 @@ import { getAllTopics } from '@/data/topics'
 import { useHomeworkStore } from '@/stores/homework'
 import { useChecklistStore } from '@/stores/checklist'
 import { useFlashStore } from '@/stores/flash'
+import { useUserStore } from '@/stores/user'
 
 const hw = useHomeworkStore()
 const cl = useChecklistStore()
 const flash = useFlashStore()
+const user = useUserStore()
+const errorCount = computed(() => user.unsolvedErrors.length)
 
 const topicsCount = computed(() => getAllTopics().length)
 const hwPending = computed(() => hw.pending.length)

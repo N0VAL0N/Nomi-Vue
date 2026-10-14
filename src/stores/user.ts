@@ -17,6 +17,7 @@ export const useUserStore = defineStore('user', {
     role: 'student',
     xp: 0,
     streak: 0,
+    errorStreak: 0,
     usedVoiceInput: false,
     statsViewsToday: 0,
     shamanSung: 0,
@@ -34,12 +35,26 @@ export const useUserStore = defineStore('user', {
     viewedTopics: [] as string[],
     solvedProblems: [] as string[],
     pomodoroCount: 0,
-    completedFlashCards: [] as string[]
+    completedFlashCards: [] as string[],
+    errorDiary: {} as Record<string, {
+      topicId: string
+      topicTitle: string
+      question: string
+      wrongCount: number
+      lastTry: string
+      solved: boolean
+    }>,
   }),
 
   getters: {
     isPremium(state): boolean {
       return !!(state.premium.active || state.premium.lifetime)
+    },
+    unsolvedErrors(state): { key: string; data: typeof state.errorDiary[string] }[] {
+      return Object.entries(state.errorDiary)
+        .filter(([, v]) => !v.solved)
+        .map(([key, data]) => ({ key, data }))
+        .sort((a, b) => b.data.wrongCount - a.data.wrongCount)
     }
   },
 

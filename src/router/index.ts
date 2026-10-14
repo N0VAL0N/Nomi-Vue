@@ -21,7 +21,8 @@ const router = createRouter({
     { path: '/tools', name: 'tools', component: () => import('@/views/ToolsView.vue') },
     { path: '/quests', name: 'quests', component: () => import('@/views/QuestsView.vue') },
     { path: '/flash', name: 'flash', component: () => import('@/views/FlashView.vue') },
-    { path: '/fridge', name: 'fridge', component: () => import('@/views/FridgeView.vue') }
+    { path: '/fridge', name: 'fridge', component: () => import('@/views/FridgeView.vue') },
+    { path: '/errors', name: 'errors', component: () => import('@/views/ErrorDiaryView.vue') },
   ]
 })
 

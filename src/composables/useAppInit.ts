@@ -59,7 +59,9 @@ export function useAppInit() {
         completedFlashCards: user.completedFlashCards,
         usedVoiceInput: user.usedVoiceInput,
         statsViewsToday: user.statsViewsToday,
-        shamanSung: user.shamanSung
+        shamanSung: user.shamanSung,
+        errorStreak: user.errorStreak,
+        errorDiary: user.errorDiary,
       },
       homework: { items: homework.items },
       checklist: { items: checklist.items },

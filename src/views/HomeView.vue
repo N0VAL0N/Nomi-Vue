@@ -30,6 +30,22 @@
       </div>
     </div>
 
+    <!-- Загруженность дня -->
+    <div class="progress-card" @click="router.push('/schedule')">
+      <div class="progress-head">
+        <span>⚡ ЗАГРУЗКА ДНЯ</span>
+        <span class="progress-pct">{{ loadPercent }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: loadPercent + '%', background: loadColor }" />
+      </div>
+      <div class="progress-label">
+        {{ loadHours }} ч {{ loadMins }} мин ·
+        {{ todayLessons.length }} уроков ·
+        {{ todayActivities.length }} кружков
+      </div>
+    </div>
+
     <div class="progress-card" @click="goSettings">
       <div class="progress-head">
         <span>🏖️ КАНИКУЛЫ</span>
@@ -76,6 +92,7 @@ import { randomQuote, type Quote } from '@/data/quotes'
 import { vRipple } from '@/directives/ripple'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import NomiRoom from '@/components/nomi/NomiRoom.vue'
+import { useLoadStats } from '@/composables/useLoadStats'
 
 const router = useRouter()
 const user = useUserStore()
@@ -87,6 +104,13 @@ const economy = useEconomy()
 const toast = useToast()
 const sound = useSound()
 const { confetti } = useConfetti()
+const {
+  lessons: todayLessons,
+  activities: todayActivities,
+  loadPercent,
+  loadHours,
+  loadMins
+} = useLoadStats()
 
 const quote = ref<Quote>(randomQuote())
 
@@ -94,6 +118,12 @@ const vacationPercent = computed(() => {
   if (progress.onVacation) return 100
   if (progress.daysToVacation < 0) return 0
   return Math.max(0, Math.min(100, Math.round((1 - progress.daysToVacation / 90) * 100)))
+})
+
+const loadColor = computed(() => {
+  if (loadPercent.value >= 80) return 'linear-gradient(135deg, #EF4444, #DC2626)'
+  if (loadPercent.value >= 50) return 'linear-gradient(135deg, #FBBF24, #F59E0B)'
+  return 'linear-gradient(135deg, #22C55E, #4ADE80)'
 })
 
 const quickActions = computed(() => [

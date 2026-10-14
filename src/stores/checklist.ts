@@ -11,6 +11,7 @@ export interface Task {
   repeat: RepeatType
   done: boolean
   createdAt: number
+  custom?: boolean
 }
 
 export const useChecklistStore = defineStore('checklist', {

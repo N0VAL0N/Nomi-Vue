@@ -15,6 +15,10 @@
         <AppIcon name="star" :size="14" />
         <span>{{ user.xp }}</span>
       </div>
+      <div class="pill" :class="{ hot: user.errorStreak > 0 }">
+        <AppIcon name="target" :size="14" />
+        <span>{{ user.errorStreak }}</span>
+      </div>
       <button v-ripple class="icon-btn" @click="router.push('/shop')">
         <AppIcon name="cart" :size="18" />
       </button>
@@ -114,5 +118,11 @@ const router = useRouter()
   align-items: center;
   justify-content: center;
   border: none;
+}
+
+.pill.hot {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #22C55E;
 }
 </style>
