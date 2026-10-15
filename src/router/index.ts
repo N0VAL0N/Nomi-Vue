@@ -23,6 +23,8 @@ const router = createRouter({
     { path: '/flash', name: 'flash', component: () => import('@/views/FlashView.vue') },
     { path: '/fridge', name: 'fridge', component: () => import('@/views/FridgeView.vue') },
     { path: '/errors', name: 'errors', component: () => import('@/views/ErrorDiaryView.vue') },
+    { path: '/plan', name: 'plan', component: () => import('@/views/PlanView.vue') },
+    { path: '/advice', name: 'advice', component: () => import('@/views/SmartAdviceView.vue') },
   ]
 })
 

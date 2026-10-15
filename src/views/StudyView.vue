@@ -1,7 +1,7 @@
 <!-- src/views/StudyView.vue -->
 <template>
   <div class="study-view">
-    <div class="title">📚 Учёба</div>
+    <div class="title">Учёба</div>
 
     <div class="hub-grid">
       <RouterLink to="/topics" class="hub-card">
@@ -45,6 +45,12 @@
         <div class="hub-name">Дневник ошибок</div>
         <div class="hub-desc">{{ errorCount }} проблем</div>
       </RouterLink>
+
+      <RouterLink to="/advice" class="hub-card">
+        <AppIcon name="sparkles" :size="28" />
+        <div class="hub-name">Советы Номи</div>
+        <div class="hub-desc">{{ adviceCount }} рекомендаций</div>
+      </RouterLink>
     </div>
   </div>
 </template>
@@ -58,6 +64,7 @@ import { useHomeworkStore } from '@/stores/homework'
 import { useChecklistStore } from '@/stores/checklist'
 import { useFlashStore } from '@/stores/flash'
 import { useUserStore } from '@/stores/user'
+import { useSmartNotificationsStore } from '@/stores/smartNotifications'
 
 const hw = useHomeworkStore()
 const cl = useChecklistStore()
@@ -69,6 +76,9 @@ const topicsCount = computed(() => getAllTopics().length)
 const hwPending = computed(() => hw.pending.length)
 const taskPending = computed(() => cl.pending.length)
 const flashCount = computed(() => flash.cards.length)
+const smart = useSmartNotificationsStore()
+const adviceCount = computed(() => smart.suggestions.length)
+
 </script>
 
 <style scoped>

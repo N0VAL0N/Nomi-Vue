@@ -22,7 +22,7 @@
     <!-- Прогресс -->
     <div class="progress-card" @click="goSettings">
       <div class="progress-head">
-        <span>📚 УЧЁБА</span>
+        <span><AppIcon name="book" :size="14" /> УЧЁБА</span>
         <span class="progress-pct">{{ progress.studyPercent }}%</span>
       </div>
       <div class="progress-bar">
@@ -33,7 +33,7 @@
     <!-- Загруженность дня -->
     <div class="progress-card" @click="router.push('/schedule')">
       <div class="progress-head">
-        <span>⚡ ЗАГРУЗКА ДНЯ</span>
+        <span><AppIcon name="zap" :size="14" /> ЗАГРУЗКА ДНЯ</span>
         <span class="progress-pct">{{ loadPercent }}%</span>
       </div>
       <div class="progress-bar">
@@ -46,9 +46,26 @@
       </div>
     </div>
 
+    <div
+      class="progress-card plan-card"
+      :class="{ ready: plan.days.length === 0 || plan.isStale }"
+      @click="router.push('/plan')"
+    >
+      <div class="progress-head">
+        <span><AppIcon name="list" :size="14" /> ПЛАН НА 7 ДНЕЙ</span>
+        <span class="progress-pct">{{ plan.days.length === 0 ? '—' : plan.progress + '%' }}</span>
+      </div>
+      <div v-if="plan.days.length > 0" class="progress-bar">
+        <div class="progress-fill gold" :style="{ width: plan.progress + '%' }" />
+      </div>
+      <div class="progress-label">
+        {{ plan.days.length === 0 ? 'Нажми, чтобы создать план' : `${plan.days.filter(d => d.done).length} из ${plan.days.length} готово` }}
+      </div>
+    </div>
+
     <div class="progress-card" @click="goSettings">
       <div class="progress-head">
-        <span>🏖️ КАНИКУЛЫ</span>
+        <span><AppIcon name="sun" :size="14" /> КАНИКУЛЫ</span>
         <span class="progress-pct">{{ progress.daysToVacation >= 0 ? progress.daysToVacation + 'д' : '—' }}</span>
       </div>
       <div class="progress-bar">
@@ -69,10 +86,34 @@
 
     <!-- Цитата -->
     <div class="quote-card" @click="refreshQuote">
-      <div class="quote-label">💭 Цитата дня</div>
+      <div class="quote-label">
+        <AppIcon name="sparkles" :size="14" /> Цитата дня
+      </div>
       <div class="quote-text">«{{ quote.text }}»</div>
       <div class="quote-author">— {{ quote.author }}</div>
     </div>
+
+    <!-- Советы Номи -->
+    <div v-if="smart.suggestions.length > 0" class="smart-block">
+      <div class="smart-header">
+        <NomiAvatar :size="32" />
+        <span>Номи советует</span>
+      </div>
+      <div
+        v-for="s in smart.suggestions.slice(0, 3)"
+        :key="s.id"
+        class="smart-card"
+        @click="goTo(s.actionRoute)"
+      >
+        <div class="smart-icon">{{ s.icon }}</div>
+        <div class="smart-body">
+          <div class="smart-title">{{ s.title }}</div>
+          <div class="smart-text">{{ s.body }}</div>
+        </div>
+        <AppIcon name="back" :size="16" class="smart-arrow" />
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -93,6 +134,9 @@ import { vRipple } from '@/directives/ripple'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import NomiRoom from '@/components/nomi/NomiRoom.vue'
 import { useLoadStats } from '@/composables/useLoadStats'
+import { usePlanStore } from '@/stores/plan'
+import { useSmartNotificationsStore } from '@/stores/smartNotifications'
+import NomiAvatar from '@/components/nomi/NomiAvatar.vue'
 
 const router = useRouter()
 const user = useUserStore()
@@ -104,6 +148,8 @@ const economy = useEconomy()
 const toast = useToast()
 const sound = useSound()
 const { confetti } = useConfetti()
+const smart = useSmartNotificationsStore()
+const plan = usePlanStore()
 const {
   lessons: todayLessons,
   activities: todayActivities,
@@ -150,6 +196,10 @@ function openChest() {
 
 function goSettings() {
   router.push('/settings')
+}
+
+function goTo(route?: string) {
+  if (route) router.push(route)
 }
 </script>
 
@@ -292,5 +342,71 @@ function goSettings() {
   color: var(--text-secondary);
   margin-top: 8px;
   font-weight: 600;
+}
+
+.smart-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(99, 102, 241, 0.06));
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.smart-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #A78BFA;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.smart-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.smart-card:active { transform: scale(0.98); }
+
+.smart-icon {
+  font-size: 1.4rem;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.smart-body { flex: 1; min-width: 0; }
+
+.smart-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.smart-text {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smart-arrow {
+  transform: rotate(180deg);
+  color: var(--text-dim);
+  flex-shrink: 0;
 }
 </style>

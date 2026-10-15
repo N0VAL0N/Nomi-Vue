@@ -65,4 +65,19 @@ function onClick() {
   opacity: 0;
   transform: scale(0.5) translateY(20px);
 }
+
+.nomi-fab::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.5) 0%, transparent 70%);
+  z-index: -1;
+  animation: fabPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes fabPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.8; transform: scale(1.15); }
+}
 </style>

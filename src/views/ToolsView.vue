@@ -1,7 +1,7 @@
 <!-- src/views/ToolsView.vue -->
 <template>
   <div class="tools-view">
-    <div class="title">🛠 Мастерская</div>
+    <div class="title"> Мастерская</div>
     <div class="subtitle">Инструменты для работы</div>
 
     <div class="hub-grid">

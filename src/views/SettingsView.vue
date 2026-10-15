@@ -8,23 +8,23 @@
       <div class="group-title">📅 Учебный год</div>
       <div class="row" @click="openDates">
         <span class="label">📚 Начало учёбы</span>
-        <span class="value">{{ fmt(ui.schoolStart) }}</span>
+        <span class="value">{{ fmt(progress.schoolStart) }}</span>
       </div>
       <div class="row" @click="openDates">
         <span class="label">📚 Конец учёбы</span>
-        <span class="value">{{ fmt(ui.schoolEnd) }}</span>
+        <span class="value">{{ fmt(progress.schoolEnd) }}</span>
       </div>
       <div class="row" @click="openDates">
         <span class="label">🏖️ Начало каникул</span>
-        <span class="value">{{ fmt(ui.vacationStart) }}</span>
+        <span class="value">{{ fmt(progress.vacationStart) }}</span>
       </div>
       <div class="row" @click="openDates">
         <span class="label">🏁 Конец каникул</span>
-        <span class="value">{{ fmt(ui.vacationEnd) }}</span>
+        <span class="value">{{ fmt(progress.vacationEnd) }}</span>
       </div>
     </div>
 
-    <!-- Тема приложения -->
+    <!-- Оформление -->
     <div class="group">
       <div class="group-title">🎨 Оформление</div>
       <div class="row">
@@ -50,7 +50,11 @@
       <div class="row">
         <span class="label">Уведомления</span>
         <label class="switch">
-          <input type="checkbox" v-model="ui.notifications" />
+          <input
+            type="checkbox"
+            :checked="ui.notifications"
+            @change="toggleNotifications"
+          />
           <span class="slider" />
         </label>
       </div>
@@ -115,12 +119,18 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useUiStore } from '@/stores/ui'
+import { useProgressStore } from '@/stores/progress'
 import { useToast } from '@/composables/useToast'
 import { formatDate, addDays, todayISO } from '@/utils/date'
 import AppModal from '@/components/ui/AppModal.vue'
 import FormField from '@/components/ui/FormField.vue'
+import { useNotifications } from '@/composables/useNotifications'
+import { LocalNotifications } from '@capacitor/local-notifications'
+import { Capacitor } from '@capacitor/core'
 
 const ui = useUiStore()
+const progress = useProgressStore()
+const notifications = useNotifications()
 const toast = useToast()
 
 const datesModal = ref(false)
@@ -148,10 +158,10 @@ function setFont(size: 'small' | 'medium' | 'large') {
 }
 
 function openDates() {
-  tmp.schoolStart = ui.schoolStart
-  tmp.schoolEnd = ui.schoolEnd
-  tmp.vacationStart = ui.vacationStart
-  tmp.vacationEnd = ui.vacationEnd
+  tmp.schoolStart = progress.schoolStart
+  tmp.schoolEnd = progress.schoolEnd
+  tmp.vacationStart = progress.vacationStart
+  tmp.vacationEnd = progress.vacationEnd
   datesModal.value = true
 }
 
@@ -170,10 +180,10 @@ function saveDates() {
     toast.error('❌ Конец каникул раньше начала')
     return
   }
-  ui.schoolStart = tmp.schoolStart
-  ui.schoolEnd = tmp.schoolEnd
-  ui.vacationStart = tmp.vacationStart
-  ui.vacationEnd = tmp.vacationEnd
+  progress.schoolStart = tmp.schoolStart
+  progress.schoolEnd = tmp.schoolEnd
+  progress.vacationStart = tmp.vacationStart
+  progress.vacationEnd = tmp.vacationEnd
   datesModal.value = false
   toast.success('✅ Даты сохранены')
 }
@@ -182,6 +192,41 @@ function clearAll() {
   if (!confirm('Удалить все данные приложения?')) return
   localStorage.clear()
   location.reload()
+}
+
+async function toggleNotifications(e: Event) {
+  const enabled = (e.target as HTMLInputElement).checked
+
+  if (!enabled) {
+    ui.notifications = false
+    // Отменяем все pending
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const pending = await LocalNotifications.getPending()
+        if (pending.notifications.length) {
+          await LocalNotifications.cancel({ notifications: pending.notifications })
+        }
+      } catch {}
+    }
+    toast.info('🔕 Уведомления выключены')
+    return
+  }
+
+  // Включаем — проверяем разрешение
+  const granted = await notifications.checkPermission()
+  if (!granted) {
+    const ok = await notifications.requestPermission()
+    if (!ok) {
+      ui.notifications = false
+      ;(e.target as HTMLInputElement).checked = false
+      toast.error('❌ Разрешение не выдано')
+      return
+    }
+  }
+
+  await notifications.scheduleDailySuggestion()
+  ui.notifications = true
+  toast.success('🔔 Уведомления включены')
 }
 </script>
 
@@ -195,12 +240,12 @@ function clearAll() {
   gap: 12px;
 }
 
-.title { font-size: 1.1rem; font-weight: 800; color: var(--text, #E6ECFF); }
+.title { font-size: 1.1rem; font-weight: 800; color: var(--text); }
 
 .group {
-  background: var(--card-bg, #131A2A);
-  border-radius: 16px;
-  border: 1px solid var(--border-soft, #1A2236);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
   overflow: hidden;
 }
 
@@ -218,25 +263,24 @@ function clearAll() {
   justify-content: space-between;
   align-items: center;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--border-soft, #1A2236);
+  border-bottom: 1px solid var(--border-soft);
   gap: 12px;
   cursor: pointer;
 }
 
 .row:last-child { border-bottom: none; }
-
-.row.danger .label { color: #EF4444; }
+.row.danger .label { color: var(--danger); }
 
 .label {
   font-size: 0.88rem;
   font-weight: 500;
   flex: 1;
-  color: var(--text, #E6ECFF);
+  color: var(--text);
 }
 
 .value {
   font-size: 0.82rem;
-  color: var(--text-secondary, #8B95B0);
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -253,7 +297,7 @@ function clearAll() {
 .switch .slider {
   position: absolute;
   inset: 0;
-  background: var(--border, #1E2740);
+  background: var(--border);
   border-radius: 26px;
   cursor: pointer;
   transition: background 0.25s;
@@ -272,7 +316,7 @@ function clearAll() {
 }
 
 .switch input:checked + .slider {
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  background: var(--grad-purple);
 }
 
 .switch input:checked + .slider::before {
@@ -285,15 +329,15 @@ function clearAll() {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--card-bg-2, #161E30);
-  border: 1.5px solid var(--border, #1E2740);
-  color: var(--text, #E6ECFF);
+  background: var(--card-bg-2);
+  border: 1.5px solid var(--border);
+  color: var(--text);
   font-weight: 800;
   cursor: pointer;
 }
 
 .font-btns button.active {
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  background: var(--grad-purple);
   color: #fff;
   border-color: transparent;
 }
@@ -310,10 +354,10 @@ function clearAll() {
 
 .chip {
   padding: 6px 14px;
-  border-radius: 20px;
-  background: var(--card-bg-2, #161E30);
-  border: 1px solid var(--border, #1E2740);
-  color: var(--text-secondary, #8B95B0);
+  border-radius: var(--radius-full);
+  background: var(--card-bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -322,8 +366,8 @@ function clearAll() {
 .btn-primary {
   width: 100%;
   padding: 14px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  border-radius: var(--radius-sm);
+  background: var(--grad-purple);
   color: #fff;
   font-weight: 700;
   font-size: 0.95rem;

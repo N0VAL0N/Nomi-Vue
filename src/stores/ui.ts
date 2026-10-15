@@ -12,10 +12,7 @@ export const useUiStore = defineStore('ui', {
     notifications: true,
     sounds: true,
     vibration: true,
-    schoolStart: '',
-    schoolEnd: '',
-    vacationStart: '',
-    vacationEnd: ''
+    notificationsEnabled: true,
   }),
 
   actions: {

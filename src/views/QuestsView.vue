@@ -1,7 +1,7 @@
 <!-- src/views/QuestsView.vue -->
 <template>
   <div class="quests-view">
-    <div class="title">🗺 Квесты</div>
+    <div class="title">Квесты</div>
 
     <!-- Квесты -->
     <div class="list">

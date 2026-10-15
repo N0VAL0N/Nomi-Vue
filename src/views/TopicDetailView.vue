@@ -140,6 +140,7 @@ import { useSound } from '@/composables/useSound'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import type { Problem } from '@/types/topic'
 import { todayISO } from '@/utils/date'
+import { usePlanStore } from '@/stores/plan'
 
 const route = useRoute()
 const router = useRouter()
@@ -148,6 +149,7 @@ const fridge = useFridgeStore()
 const economy = useEconomy()
 const toast = useToast()
 const sound = useSound()
+const plan = usePlanStore()
 
 const tab = ref<'theory' | 'problems' | 'test'>('theory')
 const answers = ref<Record<number, string>>({})
@@ -267,6 +269,7 @@ function isCorrect(i: number): boolean {
 
 function checkTest() {
   const t = topic.value
+  const today = todayISO()
   if (!t) return
 
   let score = 0
@@ -283,6 +286,12 @@ function checkTest() {
   } else {
     fridge.add(t.id, t.title)
     toast.warning(`😢 ${score}/${testQuestions.value.length} · тема в холодильник`)
+  }
+
+  const planDay = plan.days.find((d) => d.date === today)
+  if (planDay && planDay.topicId === t.id && !planDay.done) {
+    plan.markDone(today, score)
+    toast.success('📋 День плана выполнен!')
   }
 }
 

@@ -1,7 +1,7 @@
 <!-- src/views/ErrorDiaryView.vue -->
 <template>
   <div class="diary-view">
-    <div class="title">📓 Дневник ошибок</div>
+    <div class="title">Дневник ошибок</div>
     <div class="subtitle">
       {{ errors.length === 0 ? 'Пока чисто 🎉' : `Проблемных задач: ${errors.length}` }}
     </div>

@@ -91,6 +91,7 @@ const router = useRouter()
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--text);
+  animation: pillFloat 3s ease-in-out infinite;
 }
 
 .icon-btn {
@@ -125,4 +126,10 @@ const router = useRouter()
   border-color: rgba(34, 197, 94, 0.4);
   color: #22C55E;
 }
+
+@keyframes pillFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
 </style>

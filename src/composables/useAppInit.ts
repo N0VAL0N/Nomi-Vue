@@ -20,6 +20,9 @@ import { useProgressStore } from '@/stores/progress'
 import { useChatStore } from '@/stores/chat'
 import { useChestStore } from '@/stores/chest'
 import { useBackgroundStore } from '@/stores/background'
+import { usePlanStore } from '@/stores/plan'
+import { useRemindersStore } from '@/stores/reminders'
+
 
 export function useAppInit() {
   const user = useUserStore()
@@ -36,6 +39,9 @@ export function useAppInit() {
   const chest = useChestStore()
   const bg = useBackgroundStore()
   const chat = useChatStore()
+  const plan = usePlanStore()
+  const reminders = useRemindersStore()
+
 
   function snapshot() {
     return {
@@ -63,6 +69,10 @@ export function useAppInit() {
         errorStreak: user.errorStreak,
         errorDiary: user.errorDiary,
       },
+      plan: {
+        days: plan.days,
+        generatedAt: plan.generatedAt
+      },
       homework: { items: homework.items },
       checklist: { items: checklist.items },
       ui: {
@@ -72,10 +82,6 @@ export function useAppInit() {
         notifications: ui.notifications,
         sounds: ui.sounds,
         vibration: ui.vibration,
-        schoolStart: ui.schoolStart,
-        schoolEnd: ui.schoolEnd,
-        vacationStart: ui.vacationStart,
-        vacationEnd: ui.vacationEnd
       },
       shop: {
         activeColor: shop.activeColor,
@@ -86,6 +92,9 @@ export function useAppInit() {
         ownedHats: shop.ownedHats,
         ownedThemes: shop.ownedThemes,
         ownedBackgrounds: shop.ownedBackgrounds
+      },
+      reminders: {
+        items: reminders.items
       },
       pet: {
         pet: pet.pet,
@@ -137,6 +146,8 @@ export function useAppInit() {
     if (saved.chest) Object.assign(chest, saved.chest)
     if (saved.shop) Object.assign(shop, saved.shop)
     if (saved.shop?.activeBackground) bg.setTheme(saved.shop.activeBackground)
+    if (saved.plan) Object.assign(plan, saved.plan)
+    if (saved.reminders) reminders.items = saved.reminders.items || []
 
     if (saved.pet) {
       if (saved.pet.pet) Object.assign(pet.pet, saved.pet.pet)
@@ -149,6 +160,13 @@ export function useAppInit() {
       if (saved.chat.messages) chat.messages = saved.chat.messages
       if (saved.chat.usageDate) chat.usageDate = saved.chat.usageDate
       if (saved.chat.usageCount !== undefined) chat.usageCount = saved.chat.usageCount
+    }
+
+    if (saved.shop?.activeBackground) {
+      bg.setTheme(saved.shop.activeBackground)
+    }
+    if (saved.shop?.activeTheme) {
+      applyThemeToBody(saved.shop.activeTheme)
     }
 
     if (saved.schedule) {
@@ -177,6 +195,14 @@ export function useAppInit() {
     hydrate(saved)
     ui.applyTheme()
     ui.applyFontSize()
+
+    // Применяем сохранённый фон и тему
+    if (saved.shop?.activeBackground) {
+      bg.setTheme(saved.shop.activeBackground)
+    }
+    if (saved.shop?.activeTheme) {
+      applyThemeToBody(saved.shop.activeTheme)
+    }
   }
 
   function startAutoSave() {
@@ -185,6 +211,14 @@ export function useAppInit() {
       (data) => saveToStorage(data),
       { deep: true, flush: 'post' }
     )
+  }
+
+  function applyThemeToBody(themeId: string) {
+    document.body.classList.remove(
+      'light-theme', 'theme-fire', 'theme-forest', 'theme-gold', 'theme-cosmic'
+    )
+    if (themeId === 'light') document.body.classList.add('light-theme')
+    else if (themeId !== 'dark') document.body.classList.add('theme-' + themeId)
   }
 
   return { load, startAutoSave, clearStorage }

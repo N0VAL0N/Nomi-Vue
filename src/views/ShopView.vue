@@ -249,8 +249,8 @@ function pickTheme(t: ShopItem) {
 
 function pickBackground(b: BackgroundItem) {
   if (!tryBuy(b, shop.ownedBackgrounds as string[])) return
-  shop.ownBackground(b.id)
-  bg.setTheme(b.id)
+  shop.ownBackground(b.id)         
+  bg.setTheme(b.id)                 
   toast.success(`🖼 ${b.name}`)
 }
 
