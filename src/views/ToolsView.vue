@@ -15,16 +15,15 @@
         </div>
       </RouterLink>
 
-      <!-- Заглушки для будущих инструментов -->
-      <div class="hub-card disabled">
+      <RouterLink to="/notes" class="hub-card" v-ripple>
         <div class="hub-icon">
-          <AppIcon name="list" :size="36" />
+          <AppIcon name="edit" :size="36" />
         </div>
         <div class="hub-info">
           <div class="hub-name">Заметки</div>
-          <div class="hub-desc">Скоро</div>
+          <div class="hub-desc">{{ notesCount }} шт.</div>
         </div>
-      </div>
+      </RouterLink>
 
       <div class="hub-card disabled">
         <div class="hub-icon">
@@ -43,6 +42,11 @@
 import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { vRipple } from '@/directives/ripple'
+import { useNotesStore } from '@/stores/notes'
+import { computed } from 'vue'
+
+const notes = useNotesStore()
+const notesCount = computed(() => notes.items.length)
 </script>
 
 <style scoped>

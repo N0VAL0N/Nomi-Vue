@@ -25,6 +25,7 @@ const router = createRouter({
     { path: '/errors', name: 'errors', component: () => import('@/views/ErrorDiaryView.vue') },
     { path: '/plan', name: 'plan', component: () => import('@/views/PlanView.vue') },
     { path: '/advice', name: 'advice', component: () => import('@/views/SmartAdviceView.vue') },
+    { path: '/notes', name: 'notes', component: () => import('@/views/NotesView.vue') },
   ]
 })
 

@@ -39,11 +39,18 @@
           <!-- Ввод -->
           <div class="chat-input-row">
             <input
+              ref="inputRef"
               v-model="chat.input"
               type="text"
               placeholder="Спроси Номи..."
               maxlength="200"
               @keydown.enter.prevent="send"
+              @focus="onFocus"
+              @blur="onBlur"
+            />
+            <MicButton
+              v-if="showMic"
+              @result="onVoiceResult"
             />
             <button v-ripple class="chat-send" @click="send">
               <AppIcon name="message" :size="18" />
@@ -64,13 +71,18 @@ import { useToast } from '@/composables/useToast'
 import { vRipple } from '@/directives/ripple'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import NomiAvatar from '@/components/nomi/NomiAvatar.vue'
+import MicButton from '@/components/ui/MicButton.vue'
+
 
 const chat = useChatStore()
 const user = useUserStore()
 const nomi = useNomiResponse()
 const toast = useToast()
 
+
 const bodyRef = ref<HTMLElement | null>(null)
+const inputRef = ref<HTMLInputElement | null>(null)
+const showMic = ref(false)
 
 async function scrollBottom() {
   await nextTick()
@@ -98,6 +110,20 @@ function send() {
   }, 600)
 
   scrollBottom()
+}
+
+function onFocus() {
+  // Показываем микрофон, если поле пустое
+  if (!chat.input.trim()) showMic.value = true
+}
+
+function onBlur() {
+  // Скрываем только если не пустое
+  if (chat.input.trim()) showMic.value = false
+}
+
+function onVoiceResult(text: string) {
+  chat.input = text
 }
 
 function quick(text: string) {

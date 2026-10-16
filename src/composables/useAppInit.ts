@@ -21,6 +21,7 @@ import { useChatStore } from '@/stores/chat'
 import { useChestStore } from '@/stores/chest'
 import { useBackgroundStore } from '@/stores/background'
 import { usePlanStore } from '@/stores/plan'
+import { useNotesStore } from '@/stores/notes'
 import { useRemindersStore } from '@/stores/reminders'
 
 
@@ -41,6 +42,7 @@ export function useAppInit() {
   const chat = useChatStore()
   const plan = usePlanStore()
   const reminders = useRemindersStore()
+  const notes = useNotesStore()
 
 
   function snapshot() {
@@ -131,6 +133,9 @@ export function useAppInit() {
         usageDate: chat.usageDate,
         usageCount: chat.usageCount
       },
+      notes: {
+        items: notes.items
+      },
     }
   }
 
@@ -187,6 +192,8 @@ export function useAppInit() {
     if (saved.fridge) {
       if (saved.fridge.items) fridge.items = saved.fridge.items
     }
+
+    if (saved.notes) notes.items = saved.notes.items || []
   }
 
   function load() {

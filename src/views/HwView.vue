@@ -54,8 +54,14 @@
       </FormField>
 
       <FormField label="Описание">
-        <textarea v-model="form.desc" maxlength="300" />
+        <textarea v-model="form.desc" maxlength="300" rows="3" />
       </FormField>
+      <div class="voice-row">
+        <MicButton @result="onVoiceResult" />
+        <span class="voice-hint">
+          {{ form.desc ? '🎤 Дописать голосом' : '🎤 Надиктовать задание' }}
+        </span>
+      </div>
 
       <div class="form-row">
         <FormField label="Дата">
@@ -103,6 +109,7 @@ import { shortId } from '@/utils/id'
 import { getSubjectsForGrade } from '@/data/subjects'
 import AppModal from '@/components/ui/AppModal.vue'
 import FormField from '@/components/ui/FormField.vue'
+import MicButton from '@/components/ui/MicButton.vue'
 
 const hw = useHomeworkStore()
 const user = useUserStore()
@@ -198,6 +205,10 @@ function onToggle(id: string) {
 function onDelete(id: string) {
   hw.remove(id)
   toast.info('🗑 Удалено')
+}
+
+function onVoiceResult(text: string) {
+  form.desc = form.desc ? `${form.desc} ${text}` : text
 }
 </script>
 
@@ -372,5 +383,18 @@ function onDelete(id: string) {
   border: none;
   cursor: pointer;
   margin-top: 8px;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -6px 0 14px;
+}
+
+.voice-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 </style>

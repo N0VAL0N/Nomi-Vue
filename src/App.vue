@@ -43,6 +43,7 @@ import { useAchievementsStore } from '@/stores/achievements'
 import { useBackgroundStore } from '@/stores/background'
 import { useNotifications } from '@/composables/useNotifications'
 import { useRemindersStore } from '@/stores/reminders'
+import ParticlesLayer from '@/components/layout/ParticlesLayer.vue'
 
 const user = useUserStore()
 const ui = useUiStore()
